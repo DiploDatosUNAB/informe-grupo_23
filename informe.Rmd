@@ -1,6 +1,6 @@
 ---
-title: "titulo"
-author: "nombres"
+title: "TP1"
+author: "Mauro Cejas Marcovecchio"
 output: html_document
 ---
 
@@ -8,6 +8,10 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 # Cargar los paquetes necesarios acá
+
+library(readr)
+library(dplyr)
+
 ```
 
 
@@ -19,7 +23,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 ```{r}
-# Código para cargar o leer los datos
+
+presupuesto <- read_csv("datos/recursos-mensual-2023.csv")
+
 ```
 
 
