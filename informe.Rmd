@@ -17,22 +17,23 @@ library(dplyr)
 
 ## Introducción
 
+Los datos utilizados en este Trabajo Práctico corresponden al 'Presupuesto de gastos y su ejecución' del portal de Datos Abiertos del Ministerio de Economía. Como su nombre lo indica, contiene información acerca de los montos presupuestados iniciales, vigentes, montos comprometidos, ejecutados y pagados de cada uno de los sectores de la Administración Pública Central, agrupados de forma anual. Cabe aclarar que únicamente incluye datos del ejercicio 2023, que se encuentran expresados en millones de pesos y fue actualizado por última vez el 16 de mayo del mismo año.
 
 
 ## Exploración de los datos
 
-
 ```{r}
 
-presupuesto <- read_csv("datos/recursos-mensual-2023.csv")
+presupuesto <- read_csv("datos/credito-anual-2023.csv")
 
 ```
 
 
-
 ```{r}
-# Cödigo de R acá 
-# Agregá más bloques según sea necesario
+presupuesto |>
+  group_by(jurisdiccion_desc) |>
+  summarise(presup_vigente_prom = mean(aggregate (credito_vigente)))
+
 ```
 
 
