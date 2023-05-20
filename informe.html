@@ -366,15 +366,18 @@ Administración Pública Central, agrupados de forma anual. Cabe aclarar
 que únicamente incluye datos del ejercicio 2023, que se encuentran
 expresados en millones de pesos y fue actualizado por última vez el 16
 de mayo del mismo año.</p>
-</div>
-<div id="exploración-de-los-datos" class="section level2">
-<h2>Exploración de los datos</h2>
+<p>De esta manera, con el objetivo de contar con la versión más
+actualizada disponible de esta base de datos, vamos a automatizar la
+descarga desde la web, así como también vamos a descomprimirla.</p>
 <pre class="r"><code>url &lt;- &quot;https://www.presupuestoabierto.gob.ar/datasets/2023/credito-anual-2023.zip&quot;
 destino &lt;- &quot;datos/credito-anual-2023.zip&quot;  # Ruta y nombre del archivo de destino
 download.file(url, destino)</code></pre>
 <pre class="r"><code>archivo_zip &lt;- &quot;datos/credito-anual-2023.zip&quot;
 destino &lt;- &quot;datos&quot;
 unzip(archivo_zip, exdir = destino)</code></pre>
+</div>
+<div id="exploración-de-los-datos" class="section level2">
+<h2>Exploración de los datos</h2>
 <pre class="r"><code>presupuesto &lt;- read_csv(&quot;datos/credito-anual-2023.csv&quot;,)</code></pre>
 <pre><code>## Rows: 101119 Columns: 56
 ## ── Column specification ────────────────────────────────────────────────────────
@@ -384,8 +387,12 @@ unzip(archivo_zip, exdir = destino)</code></pre>
 ## 
 ## ℹ Use `spec()` to retrieve the full column specification for this data.
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<p>Primero, vamos a renombrar algunas columnas para que sea más
+comprensible saber qué datos contienen.</p>
 <pre class="r"><code>presupuesto &lt;- presupuesto |&gt;
   rename (presupuesto_inicial = credito_presupuestado, presupuesto_vigente = credito_vigente, comprometido = credito_comprometido, ejecutado = credito_devengado, pagado = credito_pagado)</code></pre>
+<p>Luego, vamos a descartar aquellas columnas cuyo análisis no nos
+interesa.</p>
 <pre class="r"><code>presupuesto |&gt;
   select(-c(ultima_actualizacion_fecha, codigo_bapin_desc, codigo_bapin_id, prestamo_externo_desc, prestamo_externo_id, ejercicio_presupuestario))</code></pre>
 <pre><code>## # A tibble: 101,119 × 50
@@ -408,6 +415,9 @@ unzip(archivo_zip, exdir = destino)</code></pre>
 ## #   servicio_id &lt;dbl&gt;, servicio_desc &lt;chr&gt;, programa_id &lt;dbl&gt;,
 ## #   programa_desc &lt;chr&gt;, subprograma_id &lt;dbl&gt;, subprograma_desc &lt;chr&gt;,
 ## #   proyecto_id &lt;dbl&gt;, proyecto_desc &lt;chr&gt;, actividad_id &lt;dbl&gt;, …</code></pre>
+<p>Posteriormente, procedemos a cambiar la forma en la que se separan
+los decimales de las columnas que contienen números para poder operar
+con ellas.</p>
 <pre class="r"><code>presupuesto &lt;- presupuesto |&gt;
   mutate(presupuesto_inicial = gsub(&quot;,&quot;, &quot;.&quot;, presupuesto_inicial, fixed = TRUE),
          presupuesto_vigente = gsub(&quot;,&quot;, &quot;.&quot;, presupuesto_vigente, fixed = TRUE),
@@ -420,23 +430,68 @@ unzip(archivo_zip, exdir = destino)</code></pre>
          comprometido = as.numeric(comprometido),
          ejecutado = as.numeric(ejecutado),
          pagado = as.numeric(pagado))</code></pre>
+<p>Así, podemos calcular la suma del presupuesto total vigente de toda
+la administración nacional.</p>
+<pre class="r"><code>presupuesto |&gt;
+  summarise(presup_vigente_total = sum(presupuesto_vigente, na.rm = TRUE))</code></pre>
+<pre><code>## # A tibble: 1 × 1
+##   presup_vigente_total
+##                  &lt;dbl&gt;
+## 1            29108459.</code></pre>
+<p>Como también podemos discriminar qué presupuesto fue asignado a cada
+jurisdicción.</p>
 <pre class="r"><code>presupuesto |&gt;
   group_by(jurisdiccion_desc) |&gt;
-  summarise(presup_vigente_prom = mean(presupuesto_vigente, na.rm = TRUE))</code></pre>
+  summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |&gt;
+  arrange(desc(presup_vigente_minist))</code></pre>
 <pre><code>## # A tibble: 25 × 2
-##    jurisdiccion_desc                              presup_vigente_prom
-##    &lt;chr&gt;                                                        &lt;dbl&gt;
-##  1 Jefatura de Gabinete de Ministros                             34.6
-##  2 Ministerio Público                                            67.9
-##  3 Ministerio de Ambiente y Desarrollo Sostenible                11.9
-##  4 Ministerio de Ciencia, Tecnología e Innovación               135. 
-##  5 Ministerio de Cultura                                         15.9
-##  6 Ministerio de Defensa                                         68.6
-##  7 Ministerio de Desarrollo Social                              621. 
-##  8 Ministerio de Desarrollo Territorial y Hábitat               543. 
-##  9 Ministerio de Economía                                        96.2
-## 10 Ministerio de Educación                                      435. 
+##    jurisdiccion_desc                                presup_vigente_minist
+##    &lt;chr&gt;                                                            &lt;dbl&gt;
+##  1 Ministerio de Trabajo, Empleo y Seguridad Social             12043987.
+##  2 Servicio de la Deuda Pública                                  2912758.
+##  3 Obligaciones a Cargo del Tesoro                               2870137.
+##  4 Ministerio de Economía                                        2427314.
+##  5 Ministerio de Educación                                       1376109.
+##  6 Ministerio de Desarrollo Social                               1169665.
+##  7 Ministerio de Seguridad                                       1088646.
+##  8 Presidencia de la Nación                                       949438.
+##  9 Ministerio de Defensa                                          827055.
+## 10 Ministerio de Obras Públicas                                   726335.
 ## # ℹ 15 more rows</code></pre>
+<p>También podemos calcular la media de presupuesto asignada por
+jurisdicción.</p>
+<pre class="r"><code>presupuesto |&gt;
+  summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |&gt;
+  summarise(presup_vigente_minist_mean = mean(presup_vigente_minist, na.rm = TRUE))</code></pre>
+<pre><code>## # A tibble: 1 × 1
+##   presup_vigente_minist_mean
+##                        &lt;dbl&gt;
+## 1                  29108459.</code></pre>
+<pre class="r"><code>presupuesto |&gt;
+  summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |&gt;
+  summarise(presup_vigente_minist_sd = sd(presup_vigente_minist, na.rm = TRUE))</code></pre>
+<pre><code>## # A tibble: 1 × 1
+##   presup_vigente_minist_sd
+##                      &lt;dbl&gt;
+## 1                       NA</code></pre>
+<p>Podemos descubrir el presupuesto vigente mínimo.</p>
+<pre class="r"><code>presupuesto |&gt;
+  group_by(jurisdiccion_desc) |&gt;
+  summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |&gt;
+  summarise(presup_vigente_min = min(presup_vigente_minist, na.rm = TRUE))</code></pre>
+<pre><code>## # A tibble: 1 × 1
+##   presup_vigente_min
+##                &lt;dbl&gt;
+## 1             45731.</code></pre>
+<p>Y podemos descubrir el presupuesto vigente máximo.</p>
+<pre class="r"><code>presupuesto |&gt;
+  group_by(jurisdiccion_desc) |&gt;
+  summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |&gt;
+  summarise(presup_vigente_max = max(presup_vigente_minist, na.rm = TRUE))</code></pre>
+<pre><code>## # A tibble: 1 × 1
+##   presup_vigente_max
+##                &lt;dbl&gt;
+## 1          12043987.</code></pre>
 </div>
 <div id="hipótesis" class="section level2">
 <h2>Hipótesis</h2>

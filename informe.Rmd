@@ -19,8 +19,8 @@ library(dplyr)
 
 Los datos utilizados en este Trabajo Práctico corresponden al 'Presupuesto de gastos y su ejecución' del portal de Datos Abiertos del Ministerio de Economía. Como su nombre lo indica, contiene información acerca de los montos presupuestados iniciales, vigentes, montos comprometidos, ejecutados y pagados de cada uno de los sectores de la Administración Pública Central, agrupados de forma anual. Cabe aclarar que únicamente incluye datos del ejercicio 2023, que se encuentran expresados en millones de pesos y fue actualizado por última vez el 16 de mayo del mismo año.
 
+De esta manera, con el objetivo de contar con la versión más actualizada disponible de esta base de datos, vamos a automatizar la descarga desde la web, así como también vamos a descomprimirla.
 
-## Exploración de los datos
 
 ```{r}
 url <- "https://www.presupuestoabierto.gob.ar/datasets/2023/credito-anual-2023.zip"
@@ -38,6 +38,7 @@ unzip(archivo_zip, exdir = destino)
 
 ```
 
+## Exploración de los datos
 
 ```{r}
 
@@ -45,6 +46,7 @@ presupuesto <- read_csv("datos/credito-anual-2023.csv",)
 
 ```
 
+Primero, vamos a renombrar algunas columnas para que sea más comprensible saber qué datos contienen.
 
 ```{r}
 
@@ -53,6 +55,8 @@ presupuesto <- presupuesto |>
 
 ```
 
+Luego, vamos a descartar aquellas columnas cuyo análisis no nos interesa.
+
 ```{r}
 
 presupuesto |>
@@ -60,6 +64,7 @@ presupuesto |>
 
 ```
 
+Posteriormente, procedemos a cambiar la forma en la que se separan los decimales de las columnas que contienen números para poder operar con ellas.
 
 ```{r}
 
@@ -82,16 +87,71 @@ presupuesto <- presupuesto |>
 
 ```
 
+Así, podemos calcular la suma del presupuesto total vigente de toda la administración nacional.
 
+```{r}
+
+presupuesto |>
+  summarise(presup_vigente_total = sum(presupuesto_vigente, na.rm = TRUE))
+
+
+```
+
+Como también podemos discriminar qué presupuesto fue asignado a cada jurisdicción.
 
 ```{r}
 
 presupuesto |>
   group_by(jurisdiccion_desc) |>
-  summarise(presup_vigente_prom = mean(presupuesto_vigente, na.rm = TRUE))
+  summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |>
+  arrange(desc(presup_vigente_minist))
+
 
 ```
 
+También podemos calcular la media de presupuesto asignada por jurisdicción.
+
+```{r}
+
+presupuesto |>
+  summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |>
+  summarise(presup_vigente_minist_mean = mean(presup_vigente_minist, na.rm = TRUE))
+
+
+```
+
+```{r}
+
+presupuesto |>
+  summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |>
+  summarise(presup_vigente_minist_sd = sd(presup_vigente_minist, na.rm = TRUE))
+
+
+```
+
+Podemos descubrir el presupuesto vigente mínimo.
+
+```{r}
+
+presupuesto |>
+  group_by(jurisdiccion_desc) |>
+  summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |>
+  summarise(presup_vigente_min = min(presup_vigente_minist, na.rm = TRUE))
+  
+
+```
+
+Y podemos descubrir el presupuesto vigente máximo.
+
+```{r}
+
+presupuesto |>
+  group_by(jurisdiccion_desc) |>
+  summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |>
+  summarise(presup_vigente_max = max(presup_vigente_minist, na.rm = TRUE))
+  
+
+```
 
 
 ## Hipótesis
