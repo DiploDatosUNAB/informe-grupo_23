@@ -23,16 +23,72 @@ Los datos utilizados en este Trabajo Práctico corresponden al 'Presupuesto de g
 ## Exploración de los datos
 
 ```{r}
-
-presupuesto <- read_csv("datos/credito-anual-2023.csv")
+url <- "https://www.presupuestoabierto.gob.ar/datasets/2023/credito-anual-2023.zip"
+destino <- "datos/credito-anual-2023.zip"  # Ruta y nombre del archivo de destino
+download.file(url, destino)
 
 ```
 
 
 ```{r}
+
+archivo_zip <- "datos/credito-anual-2023.zip"
+destino <- "datos"
+unzip(archivo_zip, exdir = destino)
+
+```
+
+
+```{r}
+
+presupuesto <- read_csv("datos/credito-anual-2023.csv",)
+
+```
+
+
+```{r}
+
+presupuesto <- presupuesto |>
+  rename (presupuesto_inicial = credito_presupuestado, presupuesto_vigente = credito_vigente, comprometido = credito_comprometido, ejecutado = credito_devengado, pagado = credito_pagado)
+
+```
+
+```{r}
+
+presupuesto |>
+  select(-c(ultima_actualizacion_fecha, codigo_bapin_desc, codigo_bapin_id, prestamo_externo_desc, prestamo_externo_id, ejercicio_presupuestario))
+
+```
+
+
+```{r}
+
+presupuesto <- presupuesto |>
+  mutate(presupuesto_inicial = gsub(",", ".", presupuesto_inicial, fixed = TRUE),
+         presupuesto_vigente = gsub(",", ".", presupuesto_vigente, fixed = TRUE),
+         comprometido = gsub(",", ".", comprometido, fixed = TRUE),
+         ejecutado = gsub(",", ".", ejecutado, fixed = TRUE),
+         pagado = gsub(",", ".", pagado, fixed = TRUE))
+
+```
+
+```{r}
+presupuesto <- presupuesto |>
+  mutate(presupuesto_inicial = as.numeric(presupuesto_inicial),
+         presupuesto_vigente = as.numeric(presupuesto_vigente),
+         comprometido = as.numeric(comprometido),
+         ejecutado = as.numeric(ejecutado),
+         pagado = as.numeric(pagado))
+
+```
+
+
+
+```{r}
+
 presupuesto |>
   group_by(jurisdiccion_desc) |>
-  summarise(presup_vigente_prom = mean(aggregate (credito_vigente)))
+  summarise(presup_vigente_prom = mean(presupuesto_vigente, na.rm = TRUE))
 
 ```
 

@@ -357,28 +357,86 @@ display: none;
 
 <div id="introducción" class="section level2">
 <h2>Introducción</h2>
-<p>Los datos usados en este Trabajo Práctico corresponden al
+<p>Los datos utilizados en este Trabajo Práctico corresponden al
 ‘Presupuesto de gastos y su ejecución’ del portal de Datos Abiertos del
 Ministerio de Economía. Como su nombre lo indica, contiene información
 acerca de los montos presupuestados iniciales, vigentes, montos
-comprometidos, ejecutados y pagados de toda la Administración Pública
-Central, agrupados de forma mensual. Además, incluye datos únicamente
-del ejercicio 2023 y fue actualizado por última vez el 16 de mayo del
-mismo año.</p>
+comprometidos, ejecutados y pagados de cada uno de los sectores de la
+Administración Pública Central, agrupados de forma anual. Cabe aclarar
+que únicamente incluye datos del ejercicio 2023, que se encuentran
+expresados en millones de pesos y fue actualizado por última vez el 16
+de mayo del mismo año.</p>
 </div>
 <div id="exploración-de-los-datos" class="section level2">
 <h2>Exploración de los datos</h2>
-<pre class="r"><code>presupuesto &lt;- read_csv(&quot;datos/recursos-mensual-2023.csv&quot;)</code></pre>
-<pre><code>## Rows: 1625 Columns: 35
+<pre class="r"><code>url &lt;- &quot;https://www.presupuestoabierto.gob.ar/datasets/2023/credito-anual-2023.zip&quot;
+destino &lt;- &quot;datos/credito-anual-2023.zip&quot;  # Ruta y nombre del archivo de destino
+download.file(url, destino)</code></pre>
+<pre class="r"><code>archivo_zip &lt;- &quot;datos/credito-anual-2023.zip&quot;
+destino &lt;- &quot;datos&quot;
+unzip(archivo_zip, exdir = destino)</code></pre>
+<pre class="r"><code>presupuesto &lt;- read_csv(&quot;datos/credito-anual-2023.csv&quot;,)</code></pre>
+<pre><code>## Rows: 101119 Columns: 56
 ## ── Column specification ────────────────────────────────────────────────────────
 ## Delimiter: &quot;,&quot;
-## chr (18): sector_desc, subsector_desc, caracter_desc, jurisdiccion_desc, sub...
-## dbl (17): impacto_presupuestario_anio, impacto_presupuestario_mes, ejercicio...
+## chr (30): sector_desc, subsector_desc, caracter_desc, jurisdiccion_desc, sub...
+## dbl (26): impacto_presupuestario_anio, ejercicio_presupuestario, sector_id, ...
 ## 
 ## ℹ Use `spec()` to retrieve the full column specification for this data.
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<pre class="r"><code># Cödigo de R acá 
-# Agregá más bloques según sea necesario</code></pre>
+<pre class="r"><code>presupuesto &lt;- presupuesto |&gt;
+  rename (presupuesto_inicial = credito_presupuestado, presupuesto_vigente = credito_vigente, comprometido = credito_comprometido, ejecutado = credito_devengado, pagado = credito_pagado)</code></pre>
+<pre class="r"><code>presupuesto |&gt;
+  select(-c(ultima_actualizacion_fecha, codigo_bapin_desc, codigo_bapin_id, prestamo_externo_desc, prestamo_externo_id, ejercicio_presupuestario))</code></pre>
+<pre><code>## # A tibble: 101,119 × 50
+##    impacto_presupuestario_anio sector_id sector_desc subsector_id subsector_desc
+##                          &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;              &lt;dbl&gt; &lt;chr&gt;         
+##  1                        2023         1 Sector Púb…            1 Administració…
+##  2                        2023         1 Sector Púb…            1 Administració…
+##  3                        2023         1 Sector Púb…            1 Administració…
+##  4                        2023         1 Sector Púb…            1 Administració…
+##  5                        2023         1 Sector Púb…            1 Administració…
+##  6                        2023         1 Sector Púb…            1 Administració…
+##  7                        2023         1 Sector Púb…            1 Administració…
+##  8                        2023         1 Sector Púb…            1 Administració…
+##  9                        2023         1 Sector Púb…            1 Administració…
+## 10                        2023         1 Sector Púb…            1 Administració…
+## # ℹ 101,109 more rows
+## # ℹ 45 more variables: caracter_id &lt;dbl&gt;, caracter_desc &lt;chr&gt;,
+## #   jurisdiccion_id &lt;dbl&gt;, jurisdiccion_desc &lt;chr&gt;, subjurisdiccion_id &lt;dbl&gt;,
+## #   subjurisdiccion_desc &lt;chr&gt;, entidad_id &lt;dbl&gt;, entidad_desc &lt;chr&gt;,
+## #   servicio_id &lt;dbl&gt;, servicio_desc &lt;chr&gt;, programa_id &lt;dbl&gt;,
+## #   programa_desc &lt;chr&gt;, subprograma_id &lt;dbl&gt;, subprograma_desc &lt;chr&gt;,
+## #   proyecto_id &lt;dbl&gt;, proyecto_desc &lt;chr&gt;, actividad_id &lt;dbl&gt;, …</code></pre>
+<pre class="r"><code>presupuesto &lt;- presupuesto |&gt;
+  mutate(presupuesto_inicial = gsub(&quot;,&quot;, &quot;.&quot;, presupuesto_inicial, fixed = TRUE),
+         presupuesto_vigente = gsub(&quot;,&quot;, &quot;.&quot;, presupuesto_vigente, fixed = TRUE),
+         comprometido = gsub(&quot;,&quot;, &quot;.&quot;, comprometido, fixed = TRUE),
+         ejecutado = gsub(&quot;,&quot;, &quot;.&quot;, ejecutado, fixed = TRUE),
+         pagado = gsub(&quot;,&quot;, &quot;.&quot;, pagado, fixed = TRUE))</code></pre>
+<pre class="r"><code>presupuesto &lt;- presupuesto |&gt;
+  mutate(presupuesto_inicial = as.numeric(presupuesto_inicial),
+         presupuesto_vigente = as.numeric(presupuesto_vigente),
+         comprometido = as.numeric(comprometido),
+         ejecutado = as.numeric(ejecutado),
+         pagado = as.numeric(pagado))</code></pre>
+<pre class="r"><code>presupuesto |&gt;
+  group_by(jurisdiccion_desc) |&gt;
+  summarise(presup_vigente_prom = mean(presupuesto_vigente, na.rm = TRUE))</code></pre>
+<pre><code>## # A tibble: 25 × 2
+##    jurisdiccion_desc                              presup_vigente_prom
+##    &lt;chr&gt;                                                        &lt;dbl&gt;
+##  1 Jefatura de Gabinete de Ministros                             34.6
+##  2 Ministerio Público                                            67.9
+##  3 Ministerio de Ambiente y Desarrollo Sostenible                11.9
+##  4 Ministerio de Ciencia, Tecnología e Innovación               135. 
+##  5 Ministerio de Cultura                                         15.9
+##  6 Ministerio de Defensa                                         68.6
+##  7 Ministerio de Desarrollo Social                              621. 
+##  8 Ministerio de Desarrollo Territorial y Hábitat               543. 
+##  9 Ministerio de Economía                                        96.2
+## 10 Ministerio de Educación                                      435. 
+## # ℹ 15 more rows</code></pre>
 </div>
 <div id="hipótesis" class="section level2">
 <h2>Hipótesis</h2>
