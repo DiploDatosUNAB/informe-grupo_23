@@ -378,8 +378,8 @@ unzip(archivo_zip, exdir = destino)</code></pre>
 </div>
 <div id="exploración-de-los-datos" class="section level2">
 <h2>Exploración de los datos</h2>
-<pre class="r"><code>presupuesto &lt;- read_csv(&quot;datos/credito-anual-2023.csv&quot;,)</code></pre>
-<pre><code>## Rows: 101119 Columns: 56
+<pre class="r"><code>presupuesto &lt;- read_csv(&quot;datos/credito-anual-2023.csv&quot;)</code></pre>
+<pre><code>## Rows: 101586 Columns: 56
 ## ── Column specification ────────────────────────────────────────────────────────
 ## Delimiter: &quot;,&quot;
 ## chr (30): sector_desc, subsector_desc, caracter_desc, jurisdiccion_desc, sub...
@@ -395,26 +395,26 @@ comprensible saber qué datos contienen.</p>
 interesa.</p>
 <pre class="r"><code>presupuesto |&gt;
   select(-c(ultima_actualizacion_fecha, codigo_bapin_desc, codigo_bapin_id, prestamo_externo_desc, prestamo_externo_id, ejercicio_presupuestario))</code></pre>
-<pre><code>## # A tibble: 101,119 × 50
-##    impacto_presupuestario_anio sector_id sector_desc subsector_id subsector_desc
-##                          &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;              &lt;dbl&gt; &lt;chr&gt;         
-##  1                        2023         1 Sector Púb…            1 Administració…
-##  2                        2023         1 Sector Púb…            1 Administració…
-##  3                        2023         1 Sector Púb…            1 Administració…
-##  4                        2023         1 Sector Púb…            1 Administració…
-##  5                        2023         1 Sector Púb…            1 Administració…
-##  6                        2023         1 Sector Púb…            1 Administració…
-##  7                        2023         1 Sector Púb…            1 Administració…
-##  8                        2023         1 Sector Púb…            1 Administració…
-##  9                        2023         1 Sector Púb…            1 Administració…
-## 10                        2023         1 Sector Púb…            1 Administració…
-## # ℹ 101,109 more rows
-## # ℹ 45 more variables: caracter_id &lt;dbl&gt;, caracter_desc &lt;chr&gt;,
-## #   jurisdiccion_id &lt;dbl&gt;, jurisdiccion_desc &lt;chr&gt;, subjurisdiccion_id &lt;dbl&gt;,
+<pre><code>## # A tibble: 101,586 × 50
+##    impacto_pre…¹ secto…² secto…³ subse…⁴ subse…⁵ carac…⁶ carac…⁷ juris…⁸ juris…⁹
+##            &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt; &lt;chr&gt;  
+##  1          2023       1 Sector…       1 Admini…       1 Admini…       1 Poder …
+##  2          2023       1 Sector…       1 Admini…       1 Admini…       1 Poder …
+##  3          2023       1 Sector…       1 Admini…       1 Admini…       1 Poder …
+##  4          2023       1 Sector…       1 Admini…       1 Admini…       1 Poder …
+##  5          2023       1 Sector…       1 Admini…       1 Admini…       1 Poder …
+##  6          2023       1 Sector…       1 Admini…       1 Admini…       1 Poder …
+##  7          2023       1 Sector…       1 Admini…       1 Admini…       1 Poder …
+##  8          2023       1 Sector…       1 Admini…       1 Admini…       1 Poder …
+##  9          2023       1 Sector…       1 Admini…       1 Admini…       1 Poder …
+## 10          2023       1 Sector…       1 Admini…       1 Admini…       1 Poder …
+## # … with 101,576 more rows, 41 more variables: subjurisdiccion_id &lt;dbl&gt;,
 ## #   subjurisdiccion_desc &lt;chr&gt;, entidad_id &lt;dbl&gt;, entidad_desc &lt;chr&gt;,
 ## #   servicio_id &lt;dbl&gt;, servicio_desc &lt;chr&gt;, programa_id &lt;dbl&gt;,
 ## #   programa_desc &lt;chr&gt;, subprograma_id &lt;dbl&gt;, subprograma_desc &lt;chr&gt;,
-## #   proyecto_id &lt;dbl&gt;, proyecto_desc &lt;chr&gt;, actividad_id &lt;dbl&gt;, …</code></pre>
+## #   proyecto_id &lt;dbl&gt;, proyecto_desc &lt;chr&gt;, actividad_id &lt;dbl&gt;,
+## #   actividad_desc &lt;chr&gt;, obra_id &lt;dbl&gt;, obra_desc &lt;chr&gt;, finalidad_id &lt;dbl&gt;,
+## #   finalidad_desc &lt;chr&gt;, funcion_id &lt;dbl&gt;, funcion_desc &lt;chr&gt;, …</code></pre>
 <p>Posteriormente, procedemos a cambiar la forma en la que se separan
 los decimales de las columnas que contienen números para poder operar
 con ellas.</p>
@@ -457,41 +457,48 @@ jurisdicción.</p>
 ##  8 Presidencia de la Nación                                       949438.
 ##  9 Ministerio de Defensa                                          827055.
 ## 10 Ministerio de Obras Públicas                                   726335.
-## # ℹ 15 more rows</code></pre>
+## # … with 15 more rows</code></pre>
 <p>También podemos calcular la media de presupuesto asignada por
 jurisdicción.</p>
 <pre class="r"><code>presupuesto |&gt;
+  group_by(jurisdiccion_desc) |&gt;
   summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |&gt;
-  summarise(presup_vigente_minist_mean = mean(presup_vigente_minist, na.rm = TRUE))</code></pre>
+  summarise(presup_vigente_prom = mean(presup_vigente_minist, na.rm = TRUE))</code></pre>
 <pre><code>## # A tibble: 1 × 1
-##   presup_vigente_minist_mean
-##                        &lt;dbl&gt;
-## 1                  29108459.</code></pre>
-<pre class="r"><code>presupuesto |&gt;
-  summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |&gt;
-  summarise(presup_vigente_minist_sd = sd(presup_vigente_minist, na.rm = TRUE))</code></pre>
-<pre><code>## # A tibble: 1 × 1
-##   presup_vigente_minist_sd
-##                      &lt;dbl&gt;
-## 1                       NA</code></pre>
-<p>Podemos descubrir el presupuesto vigente mínimo.</p>
+##   presup_vigente_prom
+##                 &lt;dbl&gt;
+## 1            1164338.</code></pre>
 <pre class="r"><code>presupuesto |&gt;
   group_by(jurisdiccion_desc) |&gt;
   summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |&gt;
-  summarise(presup_vigente_min = min(presup_vigente_minist, na.rm = TRUE))</code></pre>
+  summarise(presup_vigente_sd = sd(presup_vigente_minist, na.rm = TRUE))</code></pre>
 <pre><code>## # A tibble: 1 × 1
-##   presup_vigente_min
-##                &lt;dbl&gt;
-## 1             45731.</code></pre>
-<p>Y podemos descubrir el presupuesto vigente máximo.</p>
+##   presup_vigente_sd
+##               &lt;dbl&gt;
+## 1          2424536.</code></pre>
+<p>Podemos descubrir las tres jurisdicciones que tienen mayor cantidad
+de presupuesto asignado.</p>
 <pre class="r"><code>presupuesto |&gt;
   group_by(jurisdiccion_desc) |&gt;
   summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |&gt;
-  summarise(presup_vigente_max = max(presup_vigente_minist, na.rm = TRUE))</code></pre>
-<pre><code>## # A tibble: 1 × 1
-##   presup_vigente_max
-##                &lt;dbl&gt;
-## 1          12043987.</code></pre>
+  slice_max(presup_vigente_minist, n = 3)</code></pre>
+<pre><code>## # A tibble: 3 × 2
+##   jurisdiccion_desc                                presup_vigente_minist
+##   &lt;chr&gt;                                                            &lt;dbl&gt;
+## 1 Ministerio de Trabajo, Empleo y Seguridad Social             12043987.
+## 2 Servicio de la Deuda Pública                                  2912758.
+## 3 Obligaciones a Cargo del Tesoro                               2870137.</code></pre>
+<p>Y aquellas que tienen menor presupuesto asignado</p>
+<pre class="r"><code>presupuesto |&gt;
+  group_by(jurisdiccion_desc) |&gt;
+  summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |&gt;
+  slice_min(presup_vigente_minist, n = 3)</code></pre>
+<pre><code>## # A tibble: 3 × 2
+##   jurisdiccion_desc                               presup_vigente_minist
+##   &lt;chr&gt;                                                           &lt;dbl&gt;
+## 1 Ministerio de Cultura                                          45731.
+## 2 Ministerio de las Mujeres, Géneros y Diversidad                54683.
+## 3 Ministerio de Ambiente y Desarrollo Sostenible                 56080.</code></pre>
 </div>
 <div id="hipótesis" class="section level2">
 <h2>Hipótesis</h2>

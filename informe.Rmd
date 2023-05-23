@@ -42,7 +42,7 @@ unzip(archivo_zip, exdir = destino)
 
 ```{r}
 
-presupuesto <- read_csv("datos/credito-anual-2023.csv",)
+presupuesto <- read_csv("datos/credito-anual-2023.csv")
 
 ```
 
@@ -114,41 +114,44 @@ También podemos calcular la media de presupuesto asignada por jurisdicción.
 ```{r}
 
 presupuesto |>
+  group_by(jurisdiccion_desc) |>
   summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |>
-  summarise(presup_vigente_minist_mean = mean(presup_vigente_minist, na.rm = TRUE))
+  summarise(presup_vigente_prom = mean(presup_vigente_minist, na.rm = TRUE))
 
 
 ```
-
-```{r}
-
-presupuesto |>
-  summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |>
-  summarise(presup_vigente_minist_sd = sd(presup_vigente_minist, na.rm = TRUE))
-
-
-```
-
-Podemos descubrir el presupuesto vigente mínimo.
 
 ```{r}
 
 presupuesto |>
   group_by(jurisdiccion_desc) |>
   summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |>
-  summarise(presup_vigente_min = min(presup_vigente_minist, na.rm = TRUE))
+  summarise(presup_vigente_sd = sd(presup_vigente_minist, na.rm = TRUE))
+
+
+```
+
+
+Podemos descubrir las tres jurisdicciones que tienen mayor cantidad de presupuesto asignado.
+
+```{r}
+
+presupuesto |>
+  group_by(jurisdiccion_desc) |>
+  summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |>
+  slice_max(presup_vigente_minist, n = 3)
   
 
 ```
 
-Y podemos descubrir el presupuesto vigente máximo.
+Y aquellas que tienen menor presupuesto asignado
 
 ```{r}
 
 presupuesto |>
   group_by(jurisdiccion_desc) |>
   summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |>
-  summarise(presup_vigente_max = max(presup_vigente_minist, na.rm = TRUE))
+  slice_min(presup_vigente_minist, n = 3)
   
 
 ```
