@@ -1,5 +1,5 @@
 ---
-title: "TP1"
+title: "TP2"
 author: "Mauro Cejas Marcovecchio"
 output: html_document
 ---
@@ -17,26 +17,10 @@ library(dplyr)
 
 ## Introducción
 
-Los datos utilizados en este Trabajo Práctico corresponden al 'Presupuesto de gastos y su ejecución' del portal de Datos Abiertos del Ministerio de Economía. Como su nombre lo indica, contiene información acerca de los montos presupuestados iniciales, vigentes, montos comprometidos, ejecutados y pagados de cada uno de los sectores de la Administración Pública Central, agrupados de forma anual. Cabe aclarar que únicamente incluye datos del ejercicio 2023, que se encuentran expresados en millones de pesos y fue actualizado por última vez el 16 de mayo del mismo año.
+Los datos utilizados en este Trabajo Práctico corresponden al 'Presupuesto de gastos y su ejecución' del portal de Datos Abiertos del Ministerio de Economía de la República Argentina. Como su nombre lo indica, contiene información acerca de los montos presupuestados iniciales, vigentes, montos comprometidos, ejecutados y pagados de cada uno de los sectores de la Administración Pública Central, agrupados de forma anual. Cabe aclarar que únicamente incluye datos del ejercicio 2023, que se encuentran expresados en millones de pesos y fue actualizado por última vez el 09 de junio del mismo año.
 
-De esta manera, con el objetivo de contar con la versión más actualizada disponible de esta base de datos, vamos a automatizar la descarga desde la web, así como también vamos a descomprimirla.
+Por lo pronto, con el objetivo de contar con la versión más actualizada disponible de esta base de datos cada vez que lo querramos así, vamos a armar un script aparte para automatizar la descarga desde la web. Éste será llamado actualizacion_datos.R y podrá ser encontrado en su carpeta correspondiente. 
 
-
-```{r}
-url <- "https://www.presupuestoabierto.gob.ar/datasets/2023/credito-anual-2023.zip"
-destino <- "datos/credito-anual-2023.zip"  # Ruta y nombre del archivo de destino
-download.file(url, destino)
-
-```
-
-
-```{r}
-
-archivo_zip <- "datos/credito-anual-2023.zip"
-destino <- "datos"
-unzip(archivo_zip, exdir = destino)
-
-```
 
 ## Exploración de los datos
 
@@ -46,7 +30,7 @@ presupuesto <- read_csv("datos/credito-anual-2023.csv")
 
 ```
 
-Primero, vamos a renombrar algunas columnas para que sea más comprensible saber qué datos contienen.
+Primero, vamos a renombrar algunas columnas para que sea más fácil comprender qué datos contienen.
 
 ```{r}
 
@@ -109,7 +93,7 @@ presupuesto |>
 
 ```
 
-También podemos calcular la media de presupuesto asignada por jurisdicción.
+También podemos calcular la media de presupuesto asignada por jurisdicción y su devío estándar.
 
 ```{r}
 
@@ -158,5 +142,8 @@ presupuesto |>
 
 
 ## Hipótesis
+A partir de los datos del Presupuesto de gastos y su ejecución podríamos plantearnos una cantidad ilimitada de preguntas. Algunas de ellas pueden ser cómo fue la evolución de la ejecución del presupuesto a lo largo del año en total y en cada uno de los ministerios. Otra puede estar relacionada a cómo se vió modificado el presupuesto luego de haber registrado un aumento inflacionario. En lo que sigue del Trabajo Práctico, intentaremos responderlas.
+
+
 
 
