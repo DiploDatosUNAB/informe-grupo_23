@@ -6,8 +6,7 @@ output: html_document
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-# Cargar los paquetes necesarios acá
+knitr::opts_chunk$set(echo = FALSE)
 
 library(readr)
 library(dplyr)
