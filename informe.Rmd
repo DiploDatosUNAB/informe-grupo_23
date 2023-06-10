@@ -170,23 +170,46 @@ presupuesto |>
 
 De esta manera, podemos ver que el mes de mayor ejecución nominal, en lo que va del año, es el mes de Mayo.
 
-Por otro lado, vamos a graficar la ejecución de cada una de las jurisdicciones sin agregarla al Knit, para poder contar con estos gráficos por si queremos hacer un gráfico pormenorizado.
+Por otro lado, vamos a graficar la ejecución de cada una de las jurisdicciones (sin agregarla al Knit), para poder contar con estos gráficos por si queremos hacer un análisis pormenorizado.
 
 ```{r}
 
 J <- c(1, 5, 10, 20, 25, 30, 35, 40, 41, 45, 50, 53, 57, 64, 65, 70, 71, 72, 75, 80, 81, 85, 86, 90, 91)
 
-for (jurisdiccion in J) {
+for (ministerio in J) {
   
   presupuesto |>
-    filter(jurisdiccion_id == jurisdiccion) |>
-      ggplot(aes(mes, ejecutado) +
-      geom_col() +
-      labs(title = paste0("Evolucion de la ejecucion de la jurisdiccion ",jurisdiccion)) +
-      ggsave(paste0("ejecucion ", jurisdiccion, ".png"))
+    
+    filter(jurisdiccion_id == ministerio) |>
+  
+      ggplot(aes(mes, ejecutado), fill = "colores") +
+      geom_col(aes(colour = as.factor(programa_desc))) +
+      labs(title = paste0("Ejecucion de la jurisdiccion ", ministerio )) +
+      theme(legend.position = "none")
+      
+      ggsave(path = "imagenes", paste0("ejecucion ", ministerio , ".png"))
   
 }
 
 
 ```
+En último lugar, podemos analizar las modificaciones en el presupuesto vigente en billones de pesos que hubo a lo largo del ejercicio.
 
+```{r}
+
+presupuesto |>
+  ggplot(aes(mes, presupuesto_vigente/1000000)) +
+    geom_col(colour = "red")
+
+```
+También, podemos comparar también el porcentaje de lo que representa hoy el Presupuesto Vigente del Presupuesto Inicial:
+
+```{r}
+
+presupuesto |>
+  summarise(presup_vig_sobre_inic = sum(presupuesto_vigente, na.rm = TRUE) / sum(presupuesto_inicial, na.rm = TRUE)) *100
+
+
+```
+
+De esta manera, comprobamos que la variación es únicamente del 0.6%, bastante alejadas del aumento que sería necesario para igualar al poder de compra de un presupuesto cuya ley estimaba una inflación anual del 60%.
