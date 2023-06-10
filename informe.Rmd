@@ -10,13 +10,15 @@ knitr::opts_chunk$set(echo = FALSE)
 
 library(readr)
 library(dplyr)
+library(ggplot2)
+library(tidyr)
 
 ```
 
 
 ## Introducción
 
-Los datos utilizados en este Trabajo Práctico corresponden al 'Presupuesto de gastos y su ejecución' del portal de Datos Abiertos del Ministerio de Economía de la República Argentina. Como su nombre lo indica, contiene información acerca de los montos presupuestados iniciales, vigentes, montos comprometidos, ejecutados y pagados de cada uno de los sectores de la Administración Pública Central, agrupados de forma anual. Cabe aclarar que únicamente incluye datos del ejercicio 2023, que se encuentran expresados en millones de pesos y fue actualizado por última vez el 09 de junio del mismo año.
+Los datos utilizados en este Trabajo Práctico corresponden al 'Presupuesto de gastos y su ejecución' del portal de Datos Abiertos del Ministerio de Economía de la República Argentina. Como su nombre lo indica, contiene información acerca de los montos presupuestados iniciales, vigentes, montos comprometidos, ejecutados y pagados de cada uno de los sectores de la Administración Pública Central, agrupados de forma diaria. Cabe aclarar que únicamente incluye datos del ejercicio 2023, que se encuentran expresados en millones de pesos y fue actualizado por última vez el 09 de junio del mismo año.
 
 Por lo pronto, con el objetivo de contar con la versión más actualizada disponible de esta base de datos cada vez que lo querramos así, vamos a armar un script aparte para automatizar la descarga desde la web. Éste será llamado actualizacion_datos.R y podrá ser encontrado en su carpeta correspondiente. 
 
@@ -25,7 +27,7 @@ Por lo pronto, con el objetivo de contar con la versión más actualizada dispon
 
 ```{r}
 
-presupuesto <- read_csv("datos/credito-anual-2023.csv")
+presupuesto <- read_csv("datos/credito-diario-2023.csv")
 
 ```
 
@@ -34,7 +36,7 @@ Primero, vamos a renombrar algunas columnas para que sea más fácil comprender 
 ```{r}
 
 presupuesto <- presupuesto |>
-  rename (presupuesto_inicial = credito_presupuestado, presupuesto_vigente = credito_vigente, comprometido = credito_comprometido, ejecutado = credito_devengado, pagado = credito_pagado)
+  rename (presupuesto_inicial = credito_presupuestado, presupuesto_vigente = credito_vigente, comprometido = credito_comprometido, ejecutado = credito_devengado, pagado = credito_pagado, dia = impacto_presupuestario_fecha, mes = impacto_presupuestario_mes, anio = impacto_presupuestario_anio )
 
 ```
 
@@ -132,7 +134,7 @@ Y aquellas que tienen menor presupuesto asignado
 ```{r}
 
 presupuesto |>
-  group_by(jurisdiccion_desc) |>
+  group_by(jurisdiccion_id) |>
   summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |>
   slice_min(presup_vigente_minist, n = 3)
   
@@ -141,8 +143,50 @@ presupuesto |>
 
 
 ## Hipótesis
-A partir de los datos del Presupuesto de gastos y su ejecución podríamos plantearnos una cantidad ilimitada de preguntas. Algunas de ellas pueden ser cómo fue la evolución de la ejecución del presupuesto a lo largo del año en total y en cada uno de los ministerios. Otra puede estar relacionada a cómo se vió modificado el presupuesto luego de haber registrado un aumento inflacionario. En lo que sigue del Trabajo Práctico, intentaremos responderlas.
+A partir de los datos del Presupuesto de gastos y su ejecución podríamos plantearnos una cantidad ilimitada de preguntas. Algunas de ellas pueden ser cómo fue la evolución de la ejecución del presupuesto a lo largo del año en su conjunto y en cada uno de los ministerios. Otra puede estar relacionada a cómo se vió modificado el presupuesto a lo largo del año, tomando en cuenta los cambios económicos que tuvo nuestro país. En lo que sigue del Trabajo Práctico, intentaremos responderlas.
+
+## Desarrollo
+
+En primer lugar, entonces podemos graficar la evolución de la ejecución del presupuesto a lo largo de 2023. Para ello, podemos utilizar ggplot2 y expresarlo en miles de billones de pesos (para poder verlo de forma más clara).
+
+```{r}
+
+presupuesto |>
+  ggplot(aes(mes, ejecutado/1000000)) +
+    geom_col(colour = "blue")
+
+```
+
+Para contar con los valores de la ejecución mensual que se ha realizado, podemos hacer una tabla:
+
+```{r}
+
+presupuesto |>
+  group_by(mes) |>
+  summarise(ejecutado_mes = sum(ejecutado, na.rm = TRUE))
 
 
+```
 
+De esta manera, podemos ver que el mes de mayor ejecución nominal, en lo que va del año, es el mes de Mayo.
+
+Por otro lado, vamos a graficar la ejecución de cada una de las jurisdicciones sin agregarla al Knit, para poder contar con estos gráficos por si queremos hacer un gráfico pormenorizado.
+
+```{r}
+
+J <- c(1, 5, 10, 20, 25, 30, 35, 40, 41, 45, 50, 53, 57, 64, 65, 70, 71, 72, 75, 80, 81, 85, 86, 90, 91)
+
+for (jurisdiccion in J) {
+  
+  presupuesto |>
+    filter(jurisdiccion_id == jurisdiccion) |>
+      ggplot(aes(mes, ejecutado) +
+      geom_col() +
+      labs(title = paste0("Evolucion de la ejecucion de la jurisdiccion ",jurisdiccion)) +
+      ggsave(paste0("ejecucion ", jurisdiccion, ".png"))
+  
+}
+
+
+```
 
