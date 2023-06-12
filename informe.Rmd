@@ -4,7 +4,6 @@ author: "Mauro Cejas Marcovecchio"
 output: html_document
 ---
 
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 
@@ -15,19 +14,19 @@ library(tidyr)
 
 ```
 
-
 ## Introducción
 
 Los datos utilizados en este Trabajo Práctico corresponden al 'Presupuesto de gastos y su ejecución' del portal de Datos Abiertos del Ministerio de Economía de la República Argentina. Como su nombre lo indica, contiene información acerca de los montos presupuestados iniciales, vigentes, montos comprometidos, ejecutados y pagados de cada uno de los sectores de la Administración Pública Central, agrupados de forma diaria. Cabe aclarar que únicamente incluye datos del ejercicio 2023, que se encuentran expresados en millones de pesos y fue actualizado por última vez el 09 de junio del mismo año.
 
-Por lo pronto, con el objetivo de contar con la versión más actualizada disponible de esta base de datos cada vez que lo querramos así, vamos a armar un script aparte para automatizar la descarga desde la web. Éste será llamado actualizacion_datos.R y podrá ser encontrado en su carpeta correspondiente. 
-
+Por lo pronto, con el objetivo de contar con la versión más actualizada disponible de esta base de datos cada vez que lo querramos así, vamos a armar un script aparte para automatizar la descarga desde la web. Éste será llamado actualizacion_datos.R y podrá ser encontrado en su carpeta correspondiente.
 
 ## Exploración de los datos
 
+En primer lugar, vamos a analizar los datos con los que contamos. Para ello, vamos a especificar el separador de decimales que es utilizado en el archivo. 
+
 ```{r}
 
-presupuesto <- read_csv("datos/credito-diario-2023.csv")
+presupuesto <- read_csv("datos/credito-diario-2023.csv", locale = locale(decimal_mark = ","))
 
 ```
 
@@ -44,33 +43,11 @@ Luego, vamos a descartar aquellas columnas cuyo análisis no nos interesa.
 
 ```{r}
 
-presupuesto |>
+presupuesto <- presupuesto |>
   select(-c(ultima_actualizacion_fecha, codigo_bapin_desc, codigo_bapin_id, prestamo_externo_desc, prestamo_externo_id, ejercicio_presupuestario))
 
 ```
 
-Posteriormente, procedemos a cambiar la forma en la que se separan los decimales de las columnas que contienen números para poder operar con ellas.
-
-```{r}
-
-presupuesto <- presupuesto |>
-  mutate(presupuesto_inicial = gsub(",", ".", presupuesto_inicial, fixed = TRUE),
-         presupuesto_vigente = gsub(",", ".", presupuesto_vigente, fixed = TRUE),
-         comprometido = gsub(",", ".", comprometido, fixed = TRUE),
-         ejecutado = gsub(",", ".", ejecutado, fixed = TRUE),
-         pagado = gsub(",", ".", pagado, fixed = TRUE))
-
-```
-
-```{r}
-presupuesto <- presupuesto |>
-  mutate(presupuesto_inicial = as.numeric(presupuesto_inicial),
-         presupuesto_vigente = as.numeric(presupuesto_vigente),
-         comprometido = as.numeric(comprometido),
-         ejecutado = as.numeric(ejecutado),
-         pagado = as.numeric(pagado))
-
-```
 
 Así, podemos calcular la suma del presupuesto total vigente de toda la administración nacional.
 
@@ -116,7 +93,6 @@ presupuesto |>
 
 ```
 
-
 Podemos descubrir las tres jurisdicciones que tienen mayor cantidad de presupuesto asignado.
 
 ```{r}
@@ -141,8 +117,8 @@ presupuesto |>
 
 ```
 
-
 ## Hipótesis
+
 A partir de los datos del Presupuesto de gastos y su ejecución podríamos plantearnos una cantidad ilimitada de preguntas. Algunas de ellas pueden ser cómo fue la evolución de la ejecución del presupuesto a lo largo del año en su conjunto y en cada uno de los ministerios. Otra puede estar relacionada a cómo se vió modificado el presupuesto a lo largo del año, tomando en cuenta los cambios económicos que tuvo nuestro país. En lo que sigue del Trabajo Práctico, intentaremos responderlas.
 
 ## Desarrollo
@@ -152,8 +128,10 @@ En primer lugar, entonces podemos graficar la evolución de la ejecución del pr
 ```{r}
 
 presupuesto |>
-  ggplot(aes(mes, ejecutado/1000000)) +
-    geom_col(colour = "blue")
+  group_by(mes) |>
+  summarise(ejecutado_mes = sum(ejecutado, na.rm = TRUE)) |>
+  ggplot(aes(mes, ejecutado_mes/1000000)) +
+    geom_col(fill = "blue")
 
 ```
 
@@ -174,8 +152,8 @@ Por otro lado, vamos a graficar la ejecución de cada una de las jurisdicciones 
 
 ```{r}
 
-J <- c(1, 5, 10, 20, 25, 30, 35, 40, 41, 45, 50, 53, 57, 64, 65, 70, 71, 72, 75, 80, 81, 85, 86, 90, 91)
-
+J <- unique(presupuesto$jurisdiccion_id)
+  
 for (ministerio in J) {
   
   presupuesto |>
@@ -193,6 +171,7 @@ for (ministerio in J) {
 
 
 ```
+
 En último lugar, podemos analizar las modificaciones en el presupuesto vigente en billones de pesos que hubo a lo largo del ejercicio.
 
 ```{r}
@@ -202,6 +181,7 @@ presupuesto |>
     geom_col(colour = "red")
 
 ```
+
 También, podemos comparar también el porcentaje de lo que representa hoy el Presupuesto Vigente del Presupuesto Inicial:
 
 ```{r}
