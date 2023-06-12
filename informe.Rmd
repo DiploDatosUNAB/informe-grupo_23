@@ -123,7 +123,7 @@ A partir de los datos del Presupuesto de gastos y su ejecución podríamos plant
 
 ## Desarrollo
 
-En primer lugar, entonces podemos graficar la evolución de la ejecución del presupuesto a lo largo de 2023. Para ello, podemos utilizar ggplot2 y expresarlo en miles de billones de pesos (para poder verlo de forma más clara).
+En primer lugar, entonces podemos graficar la evolución de la ejecución del presupuesto a lo largo de 2023. Para ello, podemos utilizar ggplot2 y expresarlo de billones de pesos (para poder verlo de forma más clara).
 
 ```{r}
 
@@ -177,8 +177,10 @@ En último lugar, podemos analizar las modificaciones en el presupuesto vigente 
 ```{r}
 
 presupuesto |>
-  ggplot(aes(mes, presupuesto_vigente/1000000)) +
-    geom_col(colour = "red")
+  group_by(mes)|>
+  summarise(vigente_mes = sum(presupuesto_vigente, na.rm = TRUE)) |>
+  ggplot(aes(mes, vigente_mes/1000000)) +
+    geom_col(fill = "red")
 
 ```
 
