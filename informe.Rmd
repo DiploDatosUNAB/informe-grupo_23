@@ -1,24 +1,28 @@
 ---
-title: "TP2"
+title: "Informe Grupo 23"
 author: "Mauro Cejas Marcovecchio"
-output: html_document
+output: 
+  html_document:
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
-
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 library(readr)
 library(dplyr)
 library(ggplot2)
 library(tidyr)
+library(knitr)
+library(lubridate)
 
 ```
 
 ## Introducción
 
-Los datos utilizados en este Trabajo Práctico corresponden al 'Presupuesto de gastos y su ejecución' del portal de Datos Abiertos del Ministerio de Economía de la República Argentina. Como su nombre lo indica, contiene información acerca de los montos presupuestados iniciales, vigentes, montos comprometidos, ejecutados y pagados de cada uno de los sectores de la Administración Pública Central, agrupados de forma diaria. Cabe aclarar que únicamente incluye datos del ejercicio 2023, que se encuentran expresados en millones de pesos y fue actualizado por última vez el 09 de junio del mismo año.
+Los datos utilizados en este Trabajo Práctico corresponden al 'Presupuesto de gastos y su ejecución' del portal de Datos Abiertos del Ministerio de Economía de la República Argentina. Como su nombre lo indica, contiene información acerca de los montos presupuestados iniciales, vigentes, montos comprometidos, ejecutados y pagados de cada uno de los sectores de la Administración Pública Central, agrupados de forma diaria. Cabe aclarar que únicamente incluye datos de los ejercicios 2020 al 2023, que se encuentran expresados en millones de pesos y fue actualizado por última vez el 16 de junio del mismo año.
 
 Por lo pronto, con el objetivo de contar con la versión más actualizada disponible de esta base de datos cada vez que lo querramos así, vamos a armar un script aparte para automatizar la descarga desde la web. Éste será llamado actualizacion_datos.R y podrá ser encontrado en su carpeta correspondiente.
+
 
 ## Exploración de los datos
 
@@ -26,11 +30,23 @@ En primer lugar, vamos a analizar los datos con los que contamos. Para ello, vam
 
 ```{r}
 
-presupuesto <- read_csv("datos/credito-diario-2023.csv", locale = locale(decimal_mark = ","))
+presupuesto23 <- read_csv("datos/credito-diario-2023.csv", locale = locale(decimal_mark = ","))
+presupuesto22 <- read_csv("datos/credito-diario-2022.csv", locale = locale(decimal_mark = ","))
+presupuesto21 <- read_csv("datos/credito-diario-2021.csv", locale = locale(decimal_mark = ","))
+presupuesto20 <- read_csv("datos/credito-diario-2020.csv", locale = locale(decimal_mark = ","))
 
 ```
 
-Primero, vamos a renombrar algunas columnas para que sea más fácil comprender qué datos contienen.
+Asimismo, vamos a juntar los datos de los cuatro ejercicios en una sola variable que se llame presupuesto.
+
+```{r}
+
+presupuesto <- bind_rows(presupuesto20,presupuesto21,presupuesto22,presupuesto23)
+
+```
+
+
+Posteriormente, vamos a renombrar algunas columnas para que sea más fácil comprender qué datos contienen.
 
 ```{r}
 
@@ -54,7 +70,9 @@ Así, podemos calcular la suma del presupuesto total vigente de toda la administ
 ```{r}
 
 presupuesto |>
-  summarise(presup_vigente_total = sum(presupuesto_vigente, na.rm = TRUE))
+  group_by(anio) |>
+  summarise(presup_vigente_total = sum(presupuesto_vigente, na.rm = TRUE)) |>
+  kable(col.names = c("Año","Presupuesto Anual"))
 
 
 ```
@@ -64,44 +82,23 @@ Como también podemos discriminar qué presupuesto fue asignado a cada jurisdicc
 ```{r}
 
 presupuesto |>
-  group_by(jurisdiccion_desc) |>
+  group_by(jurisdiccion_desc, anio) |>
   summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |>
-  arrange(desc(presup_vigente_minist))
+  pivot_wider(names_from = anio, values_from = presup_vigente_minist) |>
+  kable(col.names = c("Jurisdicción","2020","2021","2022","2023"))
 
 
 ```
 
-También podemos calcular la media de presupuesto asignada por jurisdicción y su devío estándar.
+Podemos descubrir las tres jurisdicciones que tuvieron mayor cantidad de presupuesto asignado.
 
 ```{r}
 
 presupuesto |>
   group_by(jurisdiccion_desc) |>
   summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |>
-  summarise(presup_vigente_prom = mean(presup_vigente_minist, na.rm = TRUE))
-
-
-```
-
-```{r}
-
-presupuesto |>
-  group_by(jurisdiccion_desc) |>
-  summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |>
-  summarise(presup_vigente_sd = sd(presup_vigente_minist, na.rm = TRUE))
-
-
-```
-
-Podemos descubrir las tres jurisdicciones que tienen mayor cantidad de presupuesto asignado.
-
-```{r}
-
-presupuesto |>
-  group_by(jurisdiccion_desc) |>
-  summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |>
-  slice_max(presup_vigente_minist, n = 3)
-  
+  slice_max(presup_vigente_minist, n = 3) |>
+  kable(col.names = c("Jurisdicción","Presupuesto Asignado"))
 
 ```
 
@@ -110,27 +107,29 @@ Y aquellas que tienen menor presupuesto asignado
 ```{r}
 
 presupuesto |>
-  group_by(jurisdiccion_id) |>
+  group_by(jurisdiccion_desc) |>
   summarise(presup_vigente_minist = sum(presupuesto_vigente, na.rm = TRUE)) |>
-  slice_min(presup_vigente_minist, n = 3)
+  slice_min(presup_vigente_minist, n = 3) |>
+  kable(col.names = c("Jurisdicción","Presupuesto Asignado"))
+
   
 
 ```
 
 ## Hipótesis
 
-A partir de los datos del Presupuesto de gastos y su ejecución podríamos plantearnos una cantidad ilimitada de preguntas. Algunas de ellas pueden ser cómo fue la evolución de la ejecución del presupuesto a lo largo del año en su conjunto y en cada uno de los ministerios. Otra puede estar relacionada a cómo se vió modificado el presupuesto a lo largo del año, tomando en cuenta los cambios económicos que tuvo nuestro país. En lo que sigue del Trabajo Práctico, intentaremos responderlas.
+A partir de los datos del Presupuesto de gastos y su ejecución podríamos plantearnos una cantidad ilimitada de preguntas. Algunas de ellas pueden ser cómo fue la evolución de la ejecución del presupuesto a lo largo de los  años, en su conjunto y en cada uno de los ministerios. Otra puede estar relacionada a cómo se vió modificado el poder de compra del presupuesto en estos años, tomando en cuenta las variaciones del tipo de cambio que tuvo nuestro país. En lo que sigue del Trabajo Práctico, intentaremos responderlas.
 
 ## Desarrollo
 
-En primer lugar, entonces podemos graficar la evolución de la ejecución del presupuesto a lo largo de 2023. Para ello, podemos utilizar ggplot2 y expresarlo de billones de pesos (para poder verlo de forma más clara).
+En primer lugar, entonces podemos graficar la evolución de la ejecución del presupuesto a lo largo de estos años a valor de pesos corrientes. Para ello, podemos utilizar ggplot2 y expresarlo de billones de pesos (para poder verlo de forma más clara).
 
 ```{r}
 
 presupuesto |>
-  group_by(mes) |>
-  summarise(ejecutado_mes = sum(ejecutado, na.rm = TRUE)) |>
-  ggplot(aes(mes, ejecutado_mes/1000000)) +
+  group_by(anio) |>
+  summarise(ejecutado_anio = sum(ejecutado, na.rm = TRUE)) |>
+  ggplot(aes(anio, ejecutado_anio/1000000)) +
     geom_col(fill = "blue")
 
 ```
@@ -140,58 +139,105 @@ Para contar con los valores de la ejecución mensual que se ha realizado, podemo
 ```{r}
 
 presupuesto |>
-  group_by(mes) |>
-  summarise(ejecutado_mes = sum(ejecutado, na.rm = TRUE))
+  group_by(anio) |>
+  summarise(ejecutado_anio = sum(ejecutado, na.rm = TRUE)) |>
+  kable(col.names = c("Año","Ejecución"))
 
 
 ```
 
-De esta manera, podemos ver que el mes de mayor ejecución nominal, en lo que va del año, es el mes de Mayo.
-
-Por otro lado, vamos a graficar la ejecución de cada una de las jurisdicciones (sin agregarla al Knit), para poder contar con estos gráficos por si queremos hacer un análisis pormenorizado.
+De la misma manera, podemos graficar la ejecución mensual de cada año.
 
 ```{r}
 
-J <- unique(presupuesto$jurisdiccion_id)
-  
-for (ministerio in J) {
-  
-  presupuesto |>
-    
-    filter(jurisdiccion_id == ministerio) |>
-  
-      ggplot(aes(mes, ejecutado), fill = "colores") +
-      geom_col(aes(colour = as.factor(programa_desc))) +
-      labs(title = paste0("Ejecucion de la jurisdiccion ", ministerio )) +
-      theme(legend.position = "none")
-      
-      ggsave(path = "imagenes", paste0("ejecucion ", ministerio , ".png"))
-  
-}
-
-
-```
-
-En último lugar, podemos analizar las modificaciones en el presupuesto vigente en billones de pesos que hubo a lo largo del ejercicio.
-
-```{r}
+nombres_meses <- month.abb
 
 presupuesto |>
-  group_by(mes)|>
-  summarise(vigente_mes = sum(presupuesto_vigente, na.rm = TRUE)) |>
-  ggplot(aes(mes, vigente_mes/1000000)) +
-    geom_col(fill = "red")
+  group_by(mes, anio) |>
+  summarise(ejecutado_mes = sum(ejecutado/1000000, na.rm = TRUE)) |>
+  ggplot(aes(mes, ejecutado_mes)) +
+    geom_line(aes(color = as.factor(anio))) +
+      scale_x_discrete(limits = nombres_meses)
 
 ```
 
-También, podemos comparar también el porcentaje de lo que representa hoy el Presupuesto Vigente del Presupuesto Inicial:
+Por lo tanto, a pesar de ser 2022 el año en donde mayor ejecución se viene dando, por el momento, podemos sosechar que el ritmo inflacionario ha hecho que la ejecución presupuestaria de la Administración Central creciera tanto nominalmente.
+
+
+Es por ello que, en segundo lugar, vamos a intentar expresar el presupuesto ejecutado durante los ejercicios 2020 a 2023 en dólares. Con ese fin, utilizaremos las cotizaciones históricas del dólar oficial minorista obtenidas manualmente desde la página web de Rava Bursátil. 
+
 
 ```{r}
 
-presupuesto |>
-  summarise(presup_vig_sobre_inic = sum(presupuesto_vigente, na.rm = TRUE) / sum(presupuesto_inicial, na.rm = TRUE)) *100
+dolaroficial <- read_csv("datos/dolaroficial.csv")
+
+```
+
+Así, vamos a crear una nueva columna en la variable Presupuesto con la cotización diaria que corresponda y su valor de la ejecución en dólares.
+
+
+```{r}
+presupuesto <- presupuesto |> 
+  mutate(dia = ymd(dia))
+
+```
+
+```{r}
+presupuestousd <- presupuesto |>
+  left_join(
+    dolaroficial |> select("ultimo","fecha"),
+    by = c ("dia" = "fecha"))
+```
+
+```{r}
+presupuestousd <- presupuestousd |>
+  rename(cotizacion = ultimo) |>
+  mutate(ejecucionusd = ejecutado/cotizacion )
+
+```
+
+Con este nuevo dato, vamos a poder recrear los mismos gráficos y tablas que habíamos hecho anteriormente.
+
+Por un lado, tendremos la ejecución anual en dólares en gráfico de barras.
+
+```{r}
+
+presupuestousd |>
+  group_by(anio) |>
+  summarise(ejecucionusd_anio = sum(ejecucionusd, na.rm = TRUE)) |>
+  ggplot(aes(anio, ejecucionusd_anio)) +
+    geom_col(fill = "blue")
+
+```
+
+La ejecución en dólares en formato tabla.
+
+```{r}
+
+presupuestousd |>
+  group_by(anio) |>
+  summarise(ejecucionusd_anio = sum(ejecucionusd, na.rm = TRUE)) |>
+  kable(col.names = c("Año","Ejecución"))
 
 
 ```
 
-De esta manera, comprobamos que la variación es únicamente del 0.6%, bastante alejadas del aumento que sería necesario para igualar al poder de compra de un presupuesto cuya ley estimaba una inflación anual del 60%.
+Y finalmente, la ejecución en dólares anual a lo largo del año.
+
+```{r}
+
+presupuestousd |>
+  group_by(mes, anio) |>
+  summarise(ejecucionusd_mes = sum(ejecucionusd, na.rm = TRUE)) |>
+  ggplot(aes(mes, ejecucionusd_mes)) +
+    geom_line(aes(color = as.factor(anio))) +
+      scale_x_discrete(limits = nombres_meses)
+
+```
+## Conclusiones
+
+1. Si bien empezamos este trabajo con expectativas de resultados que puedan ser clarificadores, al obtener los datos de la ejecución del presupuesto en dólares, no contamos con tantas certezas.
+
+2. Aunque el año de mayor ejecución anual continúa siendo 2022, independientemente si lo considermos utilizando pesos corrientes o dólares, ya no estamos seguros que el 2023 vaya a superarlo. Esto puede inferirse por encontrarnos a mediados del mes de junio de 2023 y la corriente ejecución no haya alcanzado todavía la mitad de su valor.
+
+3. Es clara la tendencia de mayores niveles de ejecución hacia fines de cada año que, al igual que la ejecución presupuestaria de cada Ministerio, puede llegar a ser analizada más profundamente en posteriores trabajos.
